@@ -1,6 +1,8 @@
 {
-    "rewrites": [
-        { "source": "/", "destination": "/install-poetry.py" }
-      ]
+  "rewrites": [
+    {
+      "destination": "/install-poetry.py",
+      "source": "/"
+    }
+  ]
 }
-

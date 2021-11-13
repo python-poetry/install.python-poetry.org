@@ -6,7 +6,7 @@ on:
       - 'install-poetry.py'
       - '.github/workflows/installer.yml'
     branches:
-      - master
+      - main
   pull_request:
     paths:
       - 'install-poetry.py'
