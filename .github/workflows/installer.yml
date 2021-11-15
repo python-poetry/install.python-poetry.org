@@ -1,4 +1,4 @@
-name: Test Installation Script
+name: Test install-poetry.py
 
 on:
   push:
@@ -14,19 +14,33 @@ on:
     branches:
       - '**'
 
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
 jobs:
   default:
     name: ${{ matrix.os }} / ${{ matrix.python-version }} / install-poetry.py ${{ matrix.args }}
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ${{ matrix.image }}
     strategy:
       matrix:
-        os: [ Ubuntu, MacOS, Windows ]
-        python-version: [ "3.6", "3.7", "3.8", "3.9", "3.10" ]
+        os: [Ubuntu, macOS, Windows]
+        python-version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
         args:
           - ""
           - "--preview"
           - "--git https://github.com/python-poetry/poetry.git"
           - "--version 1.1.11"
+        include:
+          - os: Ubuntu
+            image: ubuntu-latest
+          - os: Windows
+            image: windows-2022
+          - os: macOS
+            image: macos-11
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v2
 
@@ -37,16 +51,13 @@ jobs:
 
       - name: Update PATH
         if: ${{ matrix.os != 'Windows' }}
-        shell: bash
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Update PATH for Windows
         if: ${{ matrix.os == 'Windows' }}
-        shell: bash
         run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
 
       - name: Install Poetry
-        shell: bash
         run: python install-poetry.py -y
 
       - name: Upload Failure Log
@@ -57,7 +68,6 @@ jobs:
           path: poetry-installer-error-*.log
 
       - name: Verify Installation
-        shell: bash
         run: |
           set -e
           poetry new foobar
@@ -68,7 +78,6 @@ jobs:
             || { echo >&2 "ERROR: Virtual environment Python version do not match system version." && exit 1; }
 
       - name: Uninstall Poetry
-        shell: bash
         run: |
           python install-poetry.py -y --uninstall
           { type poetry 2>/dev/null >&2 && exit 1; } || exit 0
