@@ -275,7 +275,9 @@ class PoetryInstallationError(RuntimeError):
 class VirtualEnvironment:
     def __init__(self, path: Path) -> None:
         self._path = path
-        self._bin_path = self._path.joinpath("Scripts" if WINDOWS and not MINGW else "bin")
+        self._bin_path = self._path.joinpath(
+            "Scripts" if WINDOWS and not MINGW else "bin"
+        )
         # str is required for compatibility with subprocess run on CPython <= 3.7 on Windows
         self._python = str(
             self._path.joinpath(self._bin_path, "python.exe" if WINDOWS else "python")
