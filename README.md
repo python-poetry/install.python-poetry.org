@@ -10,7 +10,7 @@ https://install.python-poetry.org/.
 Poetry provides a custom installer that will install `poetry` isolated
 from the rest of your system.
 
-### osx / linux / bashonwindows install instructions
+### osx / linux / bashonwindows / Windows+MinGW install instructions
 ```bash
 curl -sSL https://install.python-poetry.org | python -
 ```
