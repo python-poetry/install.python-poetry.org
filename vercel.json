@@ -1,19 +1,19 @@
 {
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/install-poetry.py"
-    }
-  ],
   "headers": [
     {
-      "source": "/",
-      "headers" : [
+      "headers": [
         {
-          "key" : "Content-Type",
-          "value" : "text/plain; charset=utf-8"
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
         }
-      ]
+      ],
+      "source": "/"
+    }
+  ],
+  "rewrites": [
+    {
+      "destination": "/install-poetry.py",
+      "source": "/"
     }
   ]
 }
