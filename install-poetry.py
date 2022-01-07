@@ -755,9 +755,7 @@ class Installer:
 
         if self._version and self._version not in releases:
             msg = "Version {} does not exist.".format(self._version)
-            self._write(
-                colorize("error", msg)
-            )
+            self._write(colorize("error", msg))
 
             raise ValueError(msg)
 
