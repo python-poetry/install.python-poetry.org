@@ -477,7 +477,10 @@ class Installer:
         elif self._path:
             version = self._path
         else:
-            version, current_version = self.get_version()
+            try:
+                version, current_version = self.get_version()
+            except ValueError:
+                return 1
 
         if version is None:
             return 0
@@ -756,11 +759,10 @@ class Installer:
         )
 
         if self._version and self._version not in releases:
-            self._write(
-                colorize("error", "Version {} does not exist.".format(self._version))
-            )
+            msg = "Version {} does not exist.".format(self._version)
+            self._write(colorize("error", msg))
 
-            return None, None
+            raise ValueError(msg)
 
         version = self._version
         if not version:
