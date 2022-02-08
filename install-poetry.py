@@ -22,6 +22,7 @@ import shutil
 import site
 import subprocess
 import sys
+import sysconfig
 import tempfile
 
 from contextlib import closing
@@ -36,6 +37,7 @@ from urllib.request import urlopen
 
 SHELL = os.getenv("SHELL", "")
 WINDOWS = sys.platform.startswith("win") or (sys.platform == "cli" and os.name == "nt")
+MINGW = sysconfig.get_platform().startswith("mingw")
 MACOS = sys.platform == "darwin"
 
 FOREGROUND_COLORS = {
@@ -158,7 +160,7 @@ def bin_dir(version: Optional[str] = None) -> Path:
 
     user_base = site.getuserbase()
 
-    if WINDOWS:
+    if WINDOWS and not MINGW:
         bin_dir = os.path.join(user_base, "Scripts")
     else:
         bin_dir = os.path.join(user_base, "bin")
@@ -273,14 +275,21 @@ class PoetryInstallationError(RuntimeError):
 class VirtualEnvironment:
     def __init__(self, path: Path) -> None:
         self._path = path
+        self._bin_path = self._path.joinpath(
+            "Scripts" if WINDOWS and not MINGW else "bin"
+        )
         # str is required for compatibility with subprocess run on CPython <= 3.7 on Windows
         self._python = str(
-            self._path.joinpath("Scripts/python.exe" if WINDOWS else "bin/python")
+            self._path.joinpath(self._bin_path, "python.exe" if WINDOWS else "python")
         )
 
     @property
     def path(self):
         return self._path
+
+    @property
+    def bin_path(self):
+        return self._bin_path
 
     @classmethod
     def make(cls, target: Path) -> "VirtualEnvironment":
@@ -468,7 +477,10 @@ class Installer:
         elif self._path:
             version = self._path
         else:
-            version, current_version = self.get_version()
+            try:
+                version, current_version = self.get_version()
+            except ValueError:
+                return 1
 
         if version is None:
             return 0
@@ -602,12 +614,8 @@ class Installer:
         self._install_comment(version, "Creating script")
         self._bin_dir.mkdir(parents=True, exist_ok=True)
 
-        script = "poetry"
-        script_bin = "bin"
-        if WINDOWS:
-            script = "poetry.exe"
-            script_bin = "Scripts"
-        target_script = env.path.joinpath(script_bin, script)
+        script = "poetry.exe" if WINDOWS else "poetry"
+        target_script = env.bin_path.joinpath(script)
 
         if self._bin_dir.joinpath(script).exists():
             self._bin_dir.joinpath(script).unlink()
@@ -751,11 +759,10 @@ class Installer:
         )
 
         if self._version and self._version not in releases:
-            self._write(
-                colorize("error", "Version {} does not exist.".format(self._version))
-            )
+            msg = "Version {} does not exist.".format(self._version)
+            self._write(colorize("error", msg))
 
-            return None, None
+            raise ValueError(msg)
 
         version = self._version
         if not version:
