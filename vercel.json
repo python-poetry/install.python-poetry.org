@@ -7,7 +7,7 @@
           "value": "text/plain; charset=utf-8"
         }
       ],
-      "source": "/install-poetry.py"
+      "source": "/"
     },
     {
       "headers": [
@@ -16,7 +16,7 @@
           "value": "text/plain; charset=utf-8"
         }
       ],
-      "source": "/"
+      "source": "/(.+)\\.py"
     }
   ],
   "rewrites": [
