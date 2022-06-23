@@ -346,7 +346,7 @@ class VirtualEnvironment:
         return self.run(self._python, *args, **kwargs)
 
     def pip(self, *args, **kwargs) -> subprocess.CompletedProcess:
-        return self.python("-m", "pip", "--isolated", *args, **kwargs)
+        return self.python("-m", "pip", *args, **kwargs)
 
 
 class Cursor:
