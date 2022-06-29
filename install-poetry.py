@@ -297,7 +297,15 @@ class VirtualEnvironment:
             import venv
 
             builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=False)
-            builder.ensure_directories(target)
+            context = builder.ensure_directories(target)
+
+            if (
+                WINDOWS
+                and hasattr(context, "env_exec_cmd")
+                and context.env_exe != context.env_exec_cmd
+            ):
+                target = target.resolve()
+
             builder.create(target)
         except ImportError:
             # fallback to using virtualenv package if venv is not available, eg: ubuntu
