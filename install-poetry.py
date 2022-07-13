@@ -294,6 +294,11 @@ class VirtualEnvironment:
     @classmethod
     def make(cls, target: Path) -> "VirtualEnvironment":
         try:
+            # on some linux distributions (eg: debian), the distribution provided python
+            # installation might not include ensurepip, causing the venv module to
+            # fail when attempting to create a virtual environment
+            # we import ensurepip but do not use it explicitly here
+            import ensurepip  # noqa: F401
             import venv
 
             builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=False)
