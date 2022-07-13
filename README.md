@@ -78,3 +78,51 @@ python install-poetry.py --git https://github.com/python-poetry/poetry.git@maste
 ````
 
 **Note**: Note that the installer does not support Python < 3.6.
+
+
+## Known Issues
+
+### Debian/Ubuntu
+
+On Debian and Ubuntu systems, there are various issues that maybe caused due to how
+various Python standard library components are packaged and configured. The following
+details issues we are presently aware of, and potential workarounds.
+
+> **Note:** This can also affect WSL users on Windows.
+
+#### Installation Layout
+If you encounter an error similar to the following, this might be due to
+[pypa/virtualenv#2350](https://github.com/pypa/virtualenv/issues/2350).
+
+```console
+FileNotFoundError: [Errno 2] No such file or directory: '/root/.local/share/pypoetry/venv/bin/python'
+```
+
+You can work around this issue by setting the `DEB_PYTHON_INSTALL_LAYOUT` environment
+variable to `deb` in order to emulate previously working behaviour.
+
+```sh
+export DEB_PYTHON_INSTALL_LAYOUT=deb
+```
+
+#### Missing `distutils` Module
+
+In certain Debian/Ubuntu environments, you might encounter the following error message
+in error logs (`poetry-installer-error-*.log`) provided when the installer fails.
+
+```console
+ModuleNotFoundError: No module named 'distutils.cmd'
+```
+
+This is probably due to [this bug](https://bugs.launchpad.net/ubuntu/+source/python3.10/+bug/1940705).
+See also [pypa/get-pip#124](https://github.com/pypa/get-pip/issues/124).
+
+The known workaround for this issue is to reinstall the `distutils` package provided by
+the distribution.
+
+```sh
+apt-get install --reinstall python3-distutils
+```
+
+If you have installed a specific python version, eg: `3.10`, you might have to use the
+package name `python3.10-distutils`.
