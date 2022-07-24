@@ -571,7 +571,7 @@ class Installer:
             self._write("Removing {}".format(colorize("info", "Poetry")))
 
         shutil.rmtree(str(self._data_dir))
-        for script in ["poetry", "poetry.bat"]:
+        for script in ["poetry", "poetry.bat", "poetry.exe"]:
             if self._bin_dir.joinpath(script).exists():
                 self._bin_dir.joinpath(script).unlink()
 
