@@ -294,10 +294,23 @@ class VirtualEnvironment:
     @classmethod
     def make(cls, target: Path) -> "VirtualEnvironment":
         try:
+            # on some linux distributions (eg: debian), the distribution provided python
+            # installation might not include ensurepip, causing the venv module to
+            # fail when attempting to create a virtual environment
+            # we import ensurepip but do not use it explicitly here
+            import ensurepip  # noqa: F401
             import venv
 
             builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=False)
-            builder.ensure_directories(target)
+            context = builder.ensure_directories(target)
+
+            if (
+                WINDOWS
+                and hasattr(context, "env_exec_cmd")
+                and context.env_exe != context.env_exec_cmd
+            ):
+                target = target.resolve()
+
             builder.create(target)
         except ImportError:
             # fallback to using virtualenv package if venv is not available, eg: ubuntu
@@ -346,7 +359,7 @@ class VirtualEnvironment:
         return self.run(self._python, *args, **kwargs)
 
     def pip(self, *args, **kwargs) -> subprocess.CompletedProcess:
-        return self.python("-m", "pip", "--isolated", *args, **kwargs)
+        return self.python("-m", "pip", *args, **kwargs)
 
 
 class Cursor:
@@ -563,7 +576,7 @@ class Installer:
             self._write("Removing {}".format(colorize("info", "Poetry")))
 
         shutil.rmtree(str(self._data_dir))
-        for script in ["poetry", "poetry.bat"]:
+        for script in ["poetry", "poetry.bat", "poetry.exe"]:
             if self._bin_dir.joinpath(script).exists():
                 self._bin_dir.joinpath(script).unlink()
 
