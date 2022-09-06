@@ -91,7 +91,7 @@ jobs:
     strategy:
       matrix:
         tag:
-          - impish
+          - focal
           - jammy
     defaults:
       run:
