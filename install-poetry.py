@@ -1,17 +1,27 @@
-"""
-This script will install Poetry and its dependencies.
+#!/usr/bin/env python3
+r"""
+This script will install Poetry and its dependencies in an isolated fashion.
 
-It does, in order:
+It will perform the following steps:
+    * Create a new virtual environment using the built-in venv module, or the virtualenv zipapp if venv is unavailable.
+      This will be created at a platform-specific path (or `$POETRY_HOME` if `$POETRY_HOME` is set:
+        - `~/Library/Application Support/pypoetry` on macOS
+        - `$XDG_DATA_HOME/pypoetry` on Linux/Unix (`$XDG_DATA_HOME` is `~/.local/share` if unset)
+        - `%APPDATA%\pypoetry` on Windows
+    * Update pip inside the virtual environment to avoid bugs in older versions.
+    * Install the latest (or a given) version of Poetry inside this virtual environment using pip.
+    * Install a `poetry` script into a platform-specific path (or `$POETRY_HOME/bin` if `$POETRY_HOME` is set):
+        - `~/.local/bin` on Unix
+        - `%APPDATA%\Python\Scripts` on Windows
+    * Attempt to inform the user if they need to add this bin directory to their `$PATH`, as well as how to do so.
+    * Upon failure, write an error log to `poetry-installer-error-<hash>.log and restore any previous environment.
 
-  - Creates a virtual environment using venv (or virtualenv zipapp) in the correct OS data dir which will be
-      - `%APPDATA%\\pypoetry` on Windows
-      -  ~/Library/Application Support/pypoetry on MacOS
-      - `${XDG_DATA_HOME}/pypoetry` (or `~/.local/share/pypoetry` if it's not set) on UNIX systems
-      - In `${POETRY_HOME}` if it's set.
-  - Installs the latest or given version of Poetry inside this virtual environment.
-  - Installs a `poetry` script in the Python user directory (or `${POETRY_HOME/bin}` if `POETRY_HOME` is set).
-  - On failure, the error log is written to poetry-installer-error-*.log and any previously existing environment
-    is restored.
+This script performs minimal magic, and should be relatively stable. However, it is optimized for interactive developer
+use and trivial pipelines. If you are considering using this script in production, you should consider manually-managed
+installs, or use of pipx as alternatives to executing arbitrary, unversioned code from the internet. If you prefer this
+script to alternatives, consider maintaining a local copy as part of your infrastructure.
+
+For full documentation, visit https://python-poetry.org/docs/#installation.
 """
 
 import argparse
@@ -19,7 +29,6 @@ import json
 import os
 import re
 import shutil
-import site
 import subprocess
 import sys
 import sysconfig
@@ -134,38 +143,29 @@ def string_to_bool(value):
     return value in {"true", "1", "y", "yes"}
 
 
-def data_dir(version: Optional[str] = None) -> Path:
+def data_dir() -> Path:
     if os.getenv("POETRY_HOME"):
         return Path(os.getenv("POETRY_HOME")).expanduser()
 
     if WINDOWS:
-        const = "CSIDL_APPDATA"
-        path = os.path.normpath(_get_win_folder(const))
-        path = os.path.join(path, "pypoetry")
+        base_dir = Path(_get_win_folder("CSIDL_APPDATA"))
     elif MACOS:
-        path = os.path.expanduser("~/Library/Application Support/pypoetry")
+        base_dir = Path("~/Library/Application Support").expanduser()
     else:
-        path = os.getenv("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
-        path = os.path.join(path, "pypoetry")
+        base_dir = Path(os.getenv("XDG_DATA_HOME", "~/.local/share")).expanduser()
 
-    if version:
-        path = os.path.join(path, version)
-
-    return Path(path)
+    base_dir = base_dir.resolve()
+    return base_dir / "pypoetry"
 
 
-def bin_dir(version: Optional[str] = None) -> Path:
+def bin_dir() -> Path:
     if os.getenv("POETRY_HOME"):
-        return Path(os.getenv("POETRY_HOME"), "bin").expanduser()
-
-    user_base = site.getuserbase()
+        return Path(os.getenv("POETRY_HOME")).expanduser() / "bin"
 
     if WINDOWS and not MINGW:
-        bin_dir = os.path.join(user_base, "Scripts")
+        return Path(_get_win_folder("CSIDL_APPDATA")) / "Python/Scripts"
     else:
-        bin_dir = os.path.join(user_base, "bin")
-
-    return Path(bin_dir)
+        return Path("~/.local/bin").expanduser()
 
 
 def _get_win_folder_from_registry(csidl_name):
@@ -181,9 +181,9 @@ def _get_win_folder_from_registry(csidl_name):
         _winreg.HKEY_CURRENT_USER,
         r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
     )
-    dir, type = _winreg.QueryValueEx(key, shell_folder_name)
+    path, _ = _winreg.QueryValueEx(key, shell_folder_name)
 
-    return dir
+    return path
 
 
 def _get_win_folder_with_ctypes(csidl_name):
@@ -477,9 +477,26 @@ class Installer:
         self._accept_all = accept_all
         self._git = git
         self._path = path
-        self._data_dir = data_dir()
-        self._bin_dir = bin_dir()
+
         self._cursor = Cursor()
+        self._bin_dir = None
+        self._data_dir = None
+
+    @property
+    def bin_dir(self) -> Path:
+        if not self._bin_dir:
+            self._bin_dir = bin_dir()
+        return self._bin_dir
+
+    @property
+    def data_dir(self) -> Path:
+        if not self._data_dir:
+            self._data_dir = data_dir()
+        return self._data_dir
+
+    @property
+    def version_file(self) -> Path:
+        return self.data_dir.joinpath("VERSION")
 
     def allows_prereleases(self) -> bool:
         return self._preview
@@ -536,7 +553,7 @@ class Installer:
 
         return 0
 
-    def install(self, version, upgrade=False):
+    def install(self, version):
         """
         Installs Poetry in $POETRY_HOME.
         """
@@ -549,13 +566,13 @@ class Installer:
         with self.make_env(version) as env:
             self.install_poetry(version, env)
             self.make_bin(version, env)
-            self._data_dir.joinpath("VERSION").write_text(version)
+            self.version_file.write_text(version)
             self._install_comment(version, "Done")
 
             return 0
 
     def uninstall(self) -> int:
-        if not self._data_dir.exists():
+        if not self.data_dir.exists():
             self._write(
                 "{} is not currently installed.".format(colorize("info", "Poetry"))
             )
@@ -563,8 +580,8 @@ class Installer:
             return 1
 
         version = None
-        if self._data_dir.joinpath("VERSION").exists():
-            version = self._data_dir.joinpath("VERSION").read_text().strip()
+        if self.version_file.exists():
+            version = self.version_file.read_text().strip()
 
         if version:
             self._write(
@@ -575,10 +592,10 @@ class Installer:
         else:
             self._write("Removing {}".format(colorize("info", "Poetry")))
 
-        shutil.rmtree(str(self._data_dir))
+        shutil.rmtree(str(self.data_dir))
         for script in ["poetry", "poetry.bat", "poetry.exe"]:
-            if self._bin_dir.joinpath(script).exists():
-                self._bin_dir.joinpath(script).unlink()
+            if self.bin_dir.joinpath(script).exists():
+                self.bin_dir.joinpath(script).unlink()
 
         return 0
 
@@ -593,7 +610,7 @@ class Installer:
 
     @contextmanager
     def make_env(self, version: str) -> VirtualEnvironment:
-        env_path = self._data_dir.joinpath("venv")
+        env_path = self.data_dir.joinpath("venv")
         env_path_saved = env_path.with_suffix(".save")
 
         if env_path.exists():
@@ -625,20 +642,20 @@ class Installer:
 
     def make_bin(self, version: str, env: VirtualEnvironment) -> None:
         self._install_comment(version, "Creating script")
-        self._bin_dir.mkdir(parents=True, exist_ok=True)
+        self.bin_dir.mkdir(parents=True, exist_ok=True)
 
         script = "poetry.exe" if WINDOWS else "poetry"
         target_script = env.bin_path.joinpath(script)
 
-        if self._bin_dir.joinpath(script).exists():
-            self._bin_dir.joinpath(script).unlink()
+        if self.bin_dir.joinpath(script).exists():
+            self.bin_dir.joinpath(script).unlink()
 
         try:
-            self._bin_dir.joinpath(script).symlink_to(target_script)
+            self.bin_dir.joinpath(script).symlink_to(target_script)
         except OSError:
             # This can happen if the user
             # does not have the correct permission on Windows
-            shutil.copy(target_script, self._bin_dir.joinpath(script))
+            shutil.copy(target_script, self.bin_dir.joinpath(script))
 
     def install_poetry(self, version: str, env: VirtualEnvironment) -> None:
         self._install_comment(version, "Installing Poetry")
@@ -655,7 +672,7 @@ class Installer:
     def display_pre_message(self) -> None:
         kwargs = {
             "poetry": colorize("info", "Poetry"),
-            "poetry_home_bin": colorize("comment", self._bin_dir),
+            "poetry_home_bin": colorize("comment", self.bin_dir),
         }
         self._write(PRE_MESSAGE.format(**kwargs))
 
@@ -672,17 +689,17 @@ class Installer:
         path = self.get_windows_path_var()
 
         message = POST_MESSAGE_NOT_IN_PATH
-        if path and str(self._bin_dir) in path:
+        if path and str(self.bin_dir) in path:
             message = POST_MESSAGE
 
         self._write(
             message.format(
                 poetry=colorize("info", "Poetry"),
                 version=colorize("b", version),
-                poetry_home_bin=colorize("comment", self._bin_dir),
-                poetry_executable=colorize("b", self._bin_dir.joinpath("poetry")),
+                poetry_home_bin=colorize("comment", self.bin_dir),
+                poetry_executable=colorize("b", self.bin_dir.joinpath("poetry")),
                 configure_message=POST_MESSAGE_CONFIGURE_WINDOWS.format(
-                    poetry_home_bin=colorize("comment", self._bin_dir)
+                    poetry_home_bin=colorize("comment", self.bin_dir)
                 ),
                 test_command=colorize("b", "poetry --version"),
             )
@@ -703,17 +720,17 @@ class Installer:
         ).decode("utf-8")
 
         message = POST_MESSAGE_NOT_IN_PATH
-        if fish_user_paths and str(self._bin_dir) in fish_user_paths:
+        if fish_user_paths and str(self.bin_dir) in fish_user_paths:
             message = POST_MESSAGE
 
         self._write(
             message.format(
                 poetry=colorize("info", "Poetry"),
                 version=colorize("b", version),
-                poetry_home_bin=colorize("comment", self._bin_dir),
-                poetry_executable=colorize("b", self._bin_dir.joinpath("poetry")),
+                poetry_home_bin=colorize("comment", self.bin_dir),
+                poetry_executable=colorize("b", self.bin_dir.joinpath("poetry")),
                 configure_message=POST_MESSAGE_CONFIGURE_FISH.format(
-                    poetry_home_bin=colorize("comment", self._bin_dir)
+                    poetry_home_bin=colorize("comment", self.bin_dir)
                 ),
                 test_command=colorize("b", "poetry --version"),
             )
@@ -723,30 +740,30 @@ class Installer:
         paths = os.getenv("PATH", "").split(":")
 
         message = POST_MESSAGE_NOT_IN_PATH
-        if paths and str(self._bin_dir) in paths:
+        if paths and str(self.bin_dir) in paths:
             message = POST_MESSAGE
 
         self._write(
             message.format(
                 poetry=colorize("info", "Poetry"),
                 version=colorize("b", version),
-                poetry_home_bin=colorize("comment", self._bin_dir),
-                poetry_executable=colorize("b", self._bin_dir.joinpath("poetry")),
+                poetry_home_bin=colorize("comment", self.bin_dir),
+                poetry_executable=colorize("b", self.bin_dir.joinpath("poetry")),
                 configure_message=POST_MESSAGE_CONFIGURE_UNIX.format(
-                    poetry_home_bin=colorize("comment", self._bin_dir)
+                    poetry_home_bin=colorize("comment", self.bin_dir)
                 ),
                 test_command=colorize("b", "poetry --version"),
             )
         )
 
     def ensure_directories(self) -> None:
-        self._data_dir.mkdir(parents=True, exist_ok=True)
-        self._bin_dir.mkdir(parents=True, exist_ok=True)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.bin_dir.mkdir(parents=True, exist_ok=True)
 
     def get_version(self):
         current_version = None
-        if self._data_dir.joinpath("VERSION").exists():
-            current_version = self._data_dir.joinpath("VERSION").read_text().strip()
+        if self.version_file.exists():
+            current_version = self.version_file.read_text().strip()
 
         self._write(colorize("info", "Retrieving Poetry metadata"))
 
