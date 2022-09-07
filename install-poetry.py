@@ -4,9 +4,9 @@ This script will install Poetry and its dependencies in an isolated fashion.
 
 It will perform the following steps:
     * Create a new virtual environment using the built-in venv module, or the virtualenv zipapp if venv is unavailable.
-      This will be created at a platform-specific path (or `$POETRY_HOME` if `$POETRY_HOME` is set:
+      This will be created at a platform-specific path (or `$POETRY_HOME` if set):
         - `~/Library/Application Support/pypoetry` on macOS
-        - `$XDG_DATA_HOME/pypoetry` on Linux/Unix (`$XDG_DATA_HOME` is `~/.local/share` if unset)
+        - `$XDG_DATA_HOME/pypoetry` on Linux/Unix (`XDG_DATA_HOME` is `~/.local/share` by default)
         - `%APPDATA%\pypoetry` on Windows
     * Update pip inside the virtual environment to avoid bugs in older versions.
     * Install the latest (or a given) version of Poetry inside this virtual environment using pip.
@@ -90,7 +90,7 @@ def style(fg, bg, options):
         for option in options:
             codes.append(OPTIONS[option])
 
-    return "\033[{}m".format(";".join(map(str, codes)))
+    return f"\033[{';'.join(map(str, codes))}m"
 
 
 STYLES = {
@@ -107,8 +107,8 @@ def is_decorated():
     if WINDOWS:
         return (
             os.getenv("ANSICON") is not None
-            or "ON" == os.getenv("ConEmuANSI")
-            or "xterm" == os.getenv("Term")
+            or os.getenv("ConEmuANSI") == "ON"
+            or os.getenv("Term") == "xterm"
         )
 
     if not hasattr(sys.stdout, "fileno"):
@@ -532,8 +532,9 @@ class Installer:
             self._write(
                 colorize(
                     "warning",
-                    f"You are installing {version}. When using the current installer, this version does not support "
-                    f"updating using the 'self update' command. Please use 1.1.7 or later.",
+                    f"You are installing {version}. When using the current installer,"
+                    " this version does not support updating using the 'self update'"
+                    " command. Please use 1.1.7 or later.",
                 )
             )
             if not self._accept_all:
@@ -558,9 +559,7 @@ class Installer:
         Installs Poetry in $POETRY_HOME.
         """
         self._write(
-            "Installing {} ({})".format(
-                colorize("info", "Poetry"), colorize("info", version)
-            )
+            f"Installing {colorize('info', 'Poetry')} ({colorize('info', version)})"
         )
 
         with self.make_env(version) as env:
@@ -573,9 +572,7 @@ class Installer:
 
     def uninstall(self) -> int:
         if not self.data_dir.exists():
-            self._write(
-                "{} is not currently installed.".format(colorize("info", "Poetry"))
-            )
+            self._write(f"{colorize('info', 'Poetry')} is not currently installed.")
 
             return 1
 
@@ -585,12 +582,10 @@ class Installer:
 
         if version:
             self._write(
-                "Removing {} ({})".format(
-                    colorize("info", "Poetry"), colorize("b", version)
-                )
+                f"Removing {colorize('info', 'Poetry')} ({colorize('b', version)})"
             )
         else:
-            self._write("Removing {}".format(colorize("info", "Poetry")))
+            self._write(f"Removing {colorize('info', 'Poetry')}")
 
         shutil.rmtree(str(self.data_dir))
         for script in ["poetry", "poetry.bat", "poetry.exe"]:
@@ -601,11 +596,8 @@ class Installer:
 
     def _install_comment(self, version: str, message: str):
         self._overwrite(
-            "Installing {} ({}): {}".format(
-                colorize("info", "Poetry"),
-                colorize("b", version),
-                colorize("comment", message),
-            )
+            f"Installing {colorize('info', 'Poetry')} ({colorize('b', version)}):"
+            f" {colorize('comment', message)}"
         )
 
     @contextmanager
@@ -708,11 +700,12 @@ class Installer:
     def get_windows_path_var(self) -> Optional[str]:
         import winreg
 
-        with winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER) as root:
-            with winreg.OpenKey(root, "Environment", 0, winreg.KEY_ALL_ACCESS) as key:
-                path, _ = winreg.QueryValueEx(key, "PATH")
+        with winreg.ConnectRegistry(
+            None, winreg.HKEY_CURRENT_USER
+        ) as root, winreg.OpenKey(root, "Environment", 0, winreg.KEY_ALL_ACCESS) as key:
+            path, _ = winreg.QueryValueEx(key, "PATH")
 
-                return path
+            return path
 
     def display_post_message_fish(self, version: str) -> None:
         fish_user_paths = subprocess.check_output(
