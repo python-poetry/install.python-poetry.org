@@ -134,7 +134,7 @@ def colorize(style, text):
     if not is_decorated():
         return text
 
-    return "{}{}\033[0m".format(STYLES[style], text)
+    return f"{STYLES[style]}{text}\033[0m"
 
 
 def string_to_bool(value):
@@ -267,7 +267,7 @@ POST_MESSAGE_CONFIGURE_WINDOWS = """"""
 
 class PoetryInstallationError(RuntimeError):
     def __init__(self, return_code: int = 0, log: Optional[str] = None):
-        super(PoetryInstallationError, self).__init__()
+        super().__init__()
         self.return_code = return_code
         self.log = log
 
@@ -367,32 +367,32 @@ class Cursor:
         self._output = sys.stdout
 
     def move_up(self, lines: int = 1) -> "Cursor":
-        self._output.write("\x1b[{}A".format(lines))
+        self._output.write(f"\x1b[{lines}A")
 
         return self
 
     def move_down(self, lines: int = 1) -> "Cursor":
-        self._output.write("\x1b[{}B".format(lines))
+        self._output.write(f"\x1b[{lines}B")
 
         return self
 
     def move_right(self, columns: int = 1) -> "Cursor":
-        self._output.write("\x1b[{}C".format(columns))
+        self._output.write(f"\x1b[{columns}C")
 
         return self
 
     def move_left(self, columns: int = 1) -> "Cursor":
-        self._output.write("\x1b[{}D".format(columns))
+        self._output.write(f"\x1b[{columns}D")
 
         return self
 
     def move_to_column(self, column: int) -> "Cursor":
-        self._output.write("\x1b[{}G".format(column))
+        self._output.write(f"\x1b[{column}G")
 
         return self
 
     def move_to_position(self, column: int, row: int) -> "Cursor":
-        self._output.write("\x1b[{};{}H".format(row + 1, column))
+        self._output.write(f"\x1b[{row + 1};{column}H")
 
         return self
 
@@ -789,7 +789,7 @@ class Installer:
         )
 
         if self._version and self._version not in releases:
-            msg = "Version {} does not exist.".format(self._version)
+            msg = f"Version {self._version} does not exist."
             self._write(colorize("error", msg))
 
             raise ValueError(msg)
@@ -807,9 +807,7 @@ class Installer:
 
         if current_version == version and not self._force:
             self._write(
-                "The latest version ({}) is already installed.".format(
-                    colorize("b", version)
-                )
+                f'The latest version ({colorize("b", version)}) is already installed.'
             )
 
             return None, current_version
@@ -835,6 +833,13 @@ class Installer:
 
 
 def main():
+    if sys.version_info < (3, 6):
+        sys.stdout.write(
+            colorize("error", "Poetry installer requires Python 3.6 or newer to run!")
+        )
+        # return error code
+        return 1
+
     parser = argparse.ArgumentParser(
         description="Installs the latest (or given) version of poetry"
     )
