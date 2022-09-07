@@ -77,7 +77,7 @@ You can also install Poetry for a `git` repository by using the `--git` option:
 python install-poetry.py --git https://github.com/python-poetry/poetry.git@master
 ````
 
-**Note**: Note that the installer does not support Python < 3.7.
+**Note**: Note that the installer does not support Python < 3.6.
 
 
 ## Known Issues

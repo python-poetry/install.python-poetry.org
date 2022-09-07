@@ -833,9 +833,9 @@ class Installer:
 
 
 def main():
-    if sys.version_info < (3, 7):
+    if sys.version_info < (3, 6):
         sys.stdout.write(
-            colorize("error", "Poetry installer requires Python 3.7 or newer to run!")
+            colorize("error", "Poetry installer requires Python 3.6 or newer to run!")
         )
         # return error code
         return 1
