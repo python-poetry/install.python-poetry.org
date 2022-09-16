@@ -293,6 +293,11 @@ class VirtualEnvironment:
 
     @classmethod
     def make(cls, target: Path) -> "VirtualEnvironment":
+        if not sys.executable:
+            raise ValueError(
+                "Unable to determine sys.executable. Set PATH to a sane value or set it explicitly with PYTHONEXECUTABLE."
+            )
+
         try:
             # on some linux distributions (eg: debian), the distribution provided python
             # installation might not include ensurepip, causing the venv module to
