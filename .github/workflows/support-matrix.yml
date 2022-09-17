@@ -1,0 +1,98 @@
+name: Support Matrix
+
+on:
+  push:
+    paths:
+      - 'install-poetry.py'
+      - '.github/workflows/support-matrix.yml'
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'install-poetry.py'
+      - '.github/workflows/support-matrix.yml'
+    branches:
+      - '**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  feature-matrix:
+    name: ${{ matrix.python-version }} / install-poetry.py ${{ matrix.args }}
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11-dev"]
+        experimental: [false]
+        args:
+          - ""
+          - "--version 1.1.15"
+          - "--version 1.2.0"
+          - "--preview"
+          - "--git https://github.com/python-poetry/poetry.git"
+          - "--path ./poetry"
+        include:
+          - args: "--version 1.1.15"
+            python-version: "3.6"
+            experimental: false
+          - python-version: "3.11-dev"
+            experimental: true
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/checkout@v3
+        with:
+          repository: python-poetry/poetry
+          path: poetry
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install Poetry
+        run: |
+          python install-poetry.py -y ${{ matrix.args }}
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          poetry --version
+
+      - name: Upload Failure Log
+        uses: actions/upload-artifact@v2
+        if: failure()
+        with:
+          name: poetry-installer-error.log
+          path: poetry-installer-error-*.log
+
+      - name: Test new project
+        run: |
+          poetry new test_project
+          cd test_project
+
+          poetry env use python3
+          if [ "$(poetry run python --version)" != "$(python3 --version)" ]; then
+            echo "ERROR: Virtual environment Python version does not match expected system version" >&2
+            exit 1
+          fi
+
+          poetry debug info
+
+      - name: Test existing project
+        if: ${{ !contains(matrix.args, '--version 1.1') }} # Poetry makes use of Poetry 1.2+ features
+        working-directory: poetry
+        run: |
+          poetry install
+          poetry build
+          poetry run poetry --version
+          poetry run poetry debug info
+
+      - name: Uninstall Poetry
+        run: |
+          python install-poetry.py -y --uninstall
+          if command -v "poetry" >/dev/null; then
+            which poetry
+            echo "ERROR: Failed to uninstall Poetry?" >&2
+            exit 1
+          fi

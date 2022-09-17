@@ -1,12 +1,12 @@
 [tool.isort]
+py_version = 36
 profile = "black"
 force_single_line = true
-atomic = true
-lines_after_imports = 2
+combine_as_imports = true
 lines_between_types = 1
-filter_files = true
+lines_after_imports = 2
 
 
 [tool.black]
-line-length = 88
-include = '\.pyi?$'
+target-version = ['py36']
+preview = true
