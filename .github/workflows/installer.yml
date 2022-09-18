@@ -15,7 +15,7 @@ on:
       - '**'
 
 concurrency:
-  group: installer-${{ github.head_ref || github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -39,6 +39,7 @@ jobs:
             image: windows-2022
           - os: macOS
             image: macos-12
+      fail-fast: false
     defaults:
       run:
         shell: bash
