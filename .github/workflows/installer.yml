@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   unit-test:
-    name: ${{ matrix.python-version }}
+    name: Unit Test / Ubuntu / Python ${{ matrix.python-version }}
     runs-on: Ubuntu
     strategy:
       matrix:
