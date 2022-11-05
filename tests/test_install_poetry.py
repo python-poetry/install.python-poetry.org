@@ -1,8 +1,10 @@
-from unittest.mock import MagicMock, patch
+import importlib
 import re
 import typing
-import importlib
 import unittest
+
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
 
 module = importlib.import_module("install-poetry")
@@ -65,7 +67,7 @@ class InstallPoetryTestCase(unittest.TestCase):
             force=False,
             accept_all=True,
             path=None,
-            git=None
+            git=None,
         )
 
         self.__installer.uninstall.assert_not_called()
@@ -79,8 +81,12 @@ class InstallPoetryTestCase(unittest.TestCase):
 
         return_code = module.main()
 
-        self.__assert_no_matching_message("error", re.compile("a fake poetry installation error"))
-        self.__assert_any_matching_message("error", re.compile(f"See {self.__tmp_file} for error logs"))
+        self.__assert_no_matching_message(
+            "error", re.compile("a fake poetry installation error")
+        )
+        self.__assert_any_matching_message(
+            "error", re.compile(f"See {self.__tmp_file} for error logs")
+        )
 
         self.assertEqual(return_code, 1)
         self.__mock_path_cls(self.__tmp_file).write_text.assert_called_once()
@@ -94,7 +100,9 @@ class InstallPoetryTestCase(unittest.TestCase):
         return_code = module.main()
 
         self.__assert_no_matching_message("info", re.compile("CI environment detected"))
-        self.__assert_any_matching_message("error", re.compile("a fake poetry installation error"))
+        self.__assert_any_matching_message(
+            "error", re.compile("a fake poetry installation error")
+        )
 
         self.assertEqual(return_code, 1)
         self.__mock_path_cls.assert_not_called()
@@ -108,7 +116,9 @@ class InstallPoetryTestCase(unittest.TestCase):
         return_code = module.main()
 
         self.__assert_no_matching_message("info", re.compile("CI environment detected"))
-        self.__assert_any_matching_message("error", re.compile("a fake poetry installation error"))
+        self.__assert_any_matching_message(
+            "error", re.compile("a fake poetry installation error")
+        )
 
         self.assertEqual(return_code, 1)
         self.__mock_path_cls.assert_not_called()
@@ -121,8 +131,12 @@ class InstallPoetryTestCase(unittest.TestCase):
 
         return_code = module.main()
 
-        self.__assert_any_matching_message("info", re.compile("CI environment detected"))
-        self.__assert_any_matching_message("error", re.compile("a fake poetry installation error"))
+        self.__assert_any_matching_message(
+            "info", re.compile("CI environment detected")
+        )
+        self.__assert_any_matching_message(
+            "error", re.compile("a fake poetry installation error")
+        )
 
         self.assertEqual(return_code, 1)
         self.__mock_path_cls.assert_not_called()
@@ -131,7 +145,9 @@ class InstallPoetryTestCase(unittest.TestCase):
         self.__messages.append((severity, message))
         return f"{severity}:{message}"
 
-    def __getenv(self, key: str, default: typing.Optional[str] = None) -> typing.Optional[str]:
+    def __getenv(
+        self, key: str, default: typing.Optional[str] = None
+    ) -> typing.Optional[str]:
         return self.__env.get(key, default)
 
     def __mkstemp(self, suffix="suffix", prefix="prefix", dir=None, text=None):
@@ -145,4 +161,10 @@ class InstallPoetryTestCase(unittest.TestCase):
         self.assertEqual(self.__count_matching_message(severity, pattern), 0)
 
     def __count_matching_message(self, severity: str, pattern: re.Pattern):
-        return len([message for message in self.__messages if severity == message[0] and pattern.search(message[1])])
+        return len(
+            [
+                message
+                for message in self.__messages
+                if severity == message[0] and pattern.search(message[1])
+            ]
+        )
