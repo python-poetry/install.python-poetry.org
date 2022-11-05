@@ -902,10 +902,8 @@ def main():
         "--stderr",
         dest="stderr",
         action="store_true",
-        help=(
-            "Log installation errors to stderr instead of a log file."
-        ),
-        default=False
+        help=("Log installation errors to stderr instead of a log file."),
+        default=False,
     )
 
     args = parser.parse_args()
@@ -921,14 +919,15 @@ def main():
         git=args.git,
     )
 
-    disable_log_file = args.stderr or string_to_bool(os.getenv("POETRY_LOG_STDERR", "0"))
+    disable_log_file = args.stderr or string_to_bool(
+        os.getenv("POETRY_LOG_STDERR", "0")
+    )
 
     if not disable_log_file and string_to_bool(os.getenv("CI", "0")):
         installer._write(
             colorize("info", "CI environment detected. Writing logs to stderr.")
         )
         disable_log_file = True
-
 
     if args.uninstall or string_to_bool(os.getenv("POETRY_UNINSTALL", "0")):
         return installer.uninstall()
