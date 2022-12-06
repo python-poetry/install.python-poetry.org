@@ -306,7 +306,7 @@ class VirtualEnvironment:
             import ensurepip  # noqa: F401
             import venv
 
-            if os.name == 'nt':
+            if os.name == "nt":
                 use_symlinks = False
             else:
                 use_symlinks = True
