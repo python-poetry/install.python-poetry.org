@@ -306,7 +306,7 @@ class VirtualEnvironment:
             import ensurepip  # noqa: F401
             import venv
 
-            builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=False)
+            builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=False, upgrade_deps=True)
             context = builder.ensure_directories(target)
 
             if (
