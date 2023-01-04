@@ -343,6 +343,12 @@ class VirtualEnvironment:
         # we do this here to ensure that outdated system default pip does not trigger older bugs
         env.pip("install", "--disable-pip-version-check", "--upgrade", "pip")
 
+        # Similarly, ensure that we have the latest setuptools; venv.EnvBuilder has an
+        # `upgrade_deps` paramter to do this, but that parameter was added in Python 3.9.
+        # Consequently we need to take this approach as long as Python < 3.9 is officially
+        # supported.
+        env.pip("install", "--upgrade", "setuptools")
+
         return env
 
     @staticmethod
