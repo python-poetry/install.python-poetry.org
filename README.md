@@ -83,6 +83,16 @@ You can also install Poetry for a `git` repository by using the `--git` option:
 curl -sSL https://install.python-poetry.org | python3 - --git https://github.com/python-poetry/poetry.git@master
 ````
 
+If you need Poetry to write errors to stderr, you can use `--stderr` option or the `$POETRY_LOG_STDERR`
+environment variable:
+
+> _Note: In CI environments, this will be enabled automatically._
+
+```bash
+curl -sSL https://install.python-poetry.org | python3 - --stderr
+curl -sSL https://install.python-poetry.org | POETRY_LOG_STDERR=1 python3 -
+````
+
 > **Note**: The installer does not support Python < 3.6.
 
 ## Known Issues

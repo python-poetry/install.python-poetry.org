@@ -898,6 +898,13 @@ def main():
             "of Poetry available online."
         ),
     )
+    parser.add_argument(
+        "--stderr",
+        dest="stderr",
+        action="store_true",
+        help=("Log installation errors to stderr instead of a log file."),
+        default=False,
+    )
 
     args = parser.parse_args()
 
@@ -912,6 +919,16 @@ def main():
         git=args.git,
     )
 
+    disable_log_file = args.stderr or string_to_bool(
+        os.getenv("POETRY_LOG_STDERR", "0")
+    )
+
+    if not disable_log_file and string_to_bool(os.getenv("CI", "0")):
+        installer._write(
+            colorize("info", "CI environment detected. Writing logs to stderr.")
+        )
+        disable_log_file = True
+
     if args.uninstall or string_to_bool(os.getenv("POETRY_UNINSTALL", "0")):
         return installer.uninstall()
 
@@ -923,15 +940,22 @@ def main():
         if e.log is not None:
             import traceback
 
-            _, path = tempfile.mkstemp(
-                suffix=".log",
-                prefix="poetry-installer-error-",
-                dir=str(Path.cwd()),
-                text=True,
+            error = (
+                f"{e.log}\n"
+                f"Traceback:\n\n{''.join(traceback.format_tb(e.__traceback__))}"
             )
-            installer._write(colorize("error", f"See {path} for error logs."))
-            text = f"{e.log}\nTraceback:\n\n{''.join(traceback.format_tb(e.__traceback__))}"
-            Path(path).write_text(text)
+
+            if disable_log_file:
+                installer._write(colorize("error", error))
+            else:
+                _, path = tempfile.mkstemp(
+                    suffix=".log",
+                    prefix="poetry-installer-error-",
+                    dir=str(Path.cwd()),
+                    text=True,
+                )
+                installer._write(colorize("error", f"See {path} for error logs."))
+                Path(path).write_text(error)
 
         return e.return_code
 
