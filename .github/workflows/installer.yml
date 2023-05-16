@@ -60,7 +60,7 @@ jobs:
         run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
 
       - name: Install Poetry
-        run: python install-poetry.py -y
+        run: python install-poetry.py -y ${{ matrix.args }}
 
       - name: Upload Failure Log
         uses: actions/upload-artifact@v2
