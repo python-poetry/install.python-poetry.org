@@ -1,5 +1,7 @@
 # Python Poetry Installer
 
+[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+
 This repository contains Poetry's official installation script, installer source and
 related hosting configuration.
 
