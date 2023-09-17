@@ -314,7 +314,14 @@ class VirtualEnvironment:
             import ensurepip  # noqa: F401
             import venv
 
-            builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=False)
+            use_symlinks = False
+            if os.path.islink(sys.executable):
+                link_target = os.readlink(sys.executable)
+                # if sys.executable is a relative symlink, such as python, installed
+                # from homebrew on MacOS, it will not work once copied
+                use_symlinks = not os.path.isabs(link_target)
+
+            builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=use_symlinks)
             context = builder.ensure_directories(target)
 
             if (
