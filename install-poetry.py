@@ -22,7 +22,7 @@ installs, or use of pipx as alternatives to executing arbitrary, unversioned cod
 script to alternatives, consider maintaining a local copy as part of your infrastructure.
 
 For full documentation, visit https://python-poetry.org/docs/#installation.
-"""  # noqa: E501
+"""
 import sys
 
 
