@@ -63,7 +63,7 @@ jobs:
         run: python install-poetry.py -y ${{ matrix.args }}
 
       - name: Upload Failure Log
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: poetry-installer-error.log
@@ -116,7 +116,7 @@ jobs:
         run: python3 install-poetry.py -y
 
       - name: Upload Failure Log
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: poetry-installer-error.log
