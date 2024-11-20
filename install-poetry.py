@@ -272,7 +272,7 @@ You can execute `set -U fish_user_paths {poetry_home_bin} $fish_user_paths`
 POST_MESSAGE_CONFIGURE_WINDOWS = """
 You can choose and execute one of the following commands in PowerShell:
 
-A. Appends the bin directory to your user environment variable `PATH`:
+A. Append the bin directory to your user environment variable `PATH`:
 
 ```
 [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", "User") + ";{poetry_home_bin}", "User")
