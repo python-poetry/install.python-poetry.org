@@ -278,7 +278,7 @@ A. Append the bin directory to your user environment variable `PATH`:
 [Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", "User") + ";{poetry_home_bin}", "User")
 ```
 
-B. Tries to appends the bin directory to PATH every when you run PowerShell (>=6 recommended):
+B. Try to append the bin directory to PATH every when you run PowerShell (>=6 recommended):
 
 ```
 echo 'if (-not (Get-Command poetry -ErrorAction Ignore)) {{ $env:Path += ";{poetry_home_bin}" }}' | Out-File -Append $PROFILE
