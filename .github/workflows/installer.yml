@@ -181,7 +181,7 @@ jobs:
 
       - name: Uninstall Python 3.13
         run: |
-          brew uninstall python@3.13
+          brew uninstall --ignore-dependencies python@3.13
 
       - name: Test Poetry
         run: |
