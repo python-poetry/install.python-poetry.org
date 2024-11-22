@@ -168,9 +168,7 @@ jobs:
       - name: Install Python 3.12
         run: |
           brew install python@3.12
-          brew unlink python@3.13
-          brew unlink python@3.12
-          brew link --force python@3.12
+          echo "$(brew --prefix python@3.12)/libexec/bin" >> $GITHUB_PATH
           hash -r
           python -m site
           ls -all $(which python)
