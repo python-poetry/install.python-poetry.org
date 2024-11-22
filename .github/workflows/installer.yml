@@ -159,6 +159,8 @@ jobs:
       - name: Install Poetry
         run: |
           eval "$(/opt/homebrew/bin/brew shellenv)"
+          python -m site
+          ls -all python
           curl -sSL https://install.python-poetry.org | python -
 
       - name: Test Poetry
