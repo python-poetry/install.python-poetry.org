@@ -169,13 +169,11 @@ jobs:
         run: |
           brew install python@3.12
           echo "$(brew --prefix python@3.12)/libexec/bin" >> $GITHUB_PATH
-          hash -r
-          python -m site
-          ls -all $(which python)
 
       - name: Test Poetry
         run: |
           python -m site
+          ls -all $(which python)
           poetry new foo
           cd foo
           poetry add pycowsay
