@@ -169,7 +169,11 @@ jobs:
         run: |
           brew install python@3.12
           brew unlink python@3.13
+          brew unlink python@3.12
           brew link --force python@3.12
+          hash -r
+          python -m site
+          ls -all $(which python)
 
       - name: Test Poetry
         run: |
