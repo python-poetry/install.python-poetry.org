@@ -152,6 +152,8 @@ jobs:
       - name: Install Homebrew
         run: |
           bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo >> /Users/runner/.bash_profile
+          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> /Users/runner/.bash_profile
 
       - name: Install Python
         run: brew install python
@@ -160,7 +162,7 @@ jobs:
         run: |
           eval "$(/opt/homebrew/bin/brew shellenv)"
           python -m site
-          ls -all python
+          ls -all $(which python)
           curl -sSL https://install.python-poetry.org | python -
 
       - name: Test Poetry
