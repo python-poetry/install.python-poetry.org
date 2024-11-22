@@ -185,7 +185,7 @@ jobs:
 
       - name: Test Poetry
         run: |
-          ls -all /Library/Frameworks/Python.framework/Versions/Current/bin/python | :
+          ls -all /Library/Frameworks/Python.framework/Versions/Current/bin/python || :
           python -m site
           ls -all $(which python)
           cd foo
