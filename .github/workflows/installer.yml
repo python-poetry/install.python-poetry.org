@@ -139,3 +139,29 @@ jobs:
         run: |
           python3 install-poetry.py -y --uninstall
           { type poetry 2>/dev/null >&2 && exit 1; } || exit 0
+
+  integration-macos-homebrew:
+    name: Integration Test / MacOS / Homebrew Python
+    runs-on: macos-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Homebrew
+        run: |
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+      - name: Install Python
+        run: brew install python
+
+      - name: Install Poetry
+        run: curl -sSL https://install.python-poetry.org | python3 -
+
+      - name: Test Poetry
+        run: |
+          poetry new foo
+          cd foo
+          poetry add pycowsay
+          poetry run pycowsay
