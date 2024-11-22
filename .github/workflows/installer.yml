@@ -178,3 +178,14 @@ jobs:
           cd foo
           poetry add pycowsay
           poetry run pycowsay
+
+      - name: Uninstall Python 3.13
+        run: |
+          brew uninstall python@3.13
+
+      - name: Test Poetry
+        run: |
+          python -m site
+          ls -all $(which python)
+          cd foo
+          poetry run pycowsay
