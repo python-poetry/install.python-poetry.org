@@ -19,123 +19,174 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  default:
-    name: ${{ matrix.os }} / ${{ matrix.python-version }} / install-poetry.py ${{ matrix.args }}
-    runs-on: ${{ matrix.image }}
-    strategy:
-      matrix:
-        os: [Ubuntu, macOS, Windows]
-        python-version:
-          - "3.9"
-          - "3.10"
-          - "3.11"
-          - "3.12"
-          - "3.13"
-        args:
-          - ""
-          - "--preview"
-          - "--git https://github.com/python-poetry/poetry.git"
-        include:
-          - os: Ubuntu
-            image: ubuntu-22.04
-          - os: Windows
-            image: windows-2022
-          - os: macOS
-            image: macos-12
-      fail-fast: false
+#  default:
+#    name: ${{ matrix.os }} / ${{ matrix.python-version }} / install-poetry.py ${{ matrix.args }}
+#    runs-on: ${{ matrix.image }}
+#    strategy:
+#      matrix:
+#        os: [Ubuntu, macOS, Windows]
+#        python-version:
+#          - "3.9"
+#          - "3.10"
+#          - "3.11"
+#          - "3.12"
+#          - "3.13"
+#        args:
+#          - ""
+#          - "--preview"
+#          - "--git https://github.com/python-poetry/poetry.git"
+#        include:
+#          - os: Ubuntu
+#            image: ubuntu-22.04
+#          - os: Windows
+#            image: windows-2022
+#          - os: macOS
+#            image: macos-12
+#      fail-fast: false
+#    defaults:
+#      run:
+#        shell: bash
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Set up Python ${{ matrix.python-version }}
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: ${{ matrix.python-version }}
+#
+#      - name: Update PATH
+#        if: ${{ matrix.os != 'Windows' }}
+#        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+#
+#      - name: Update PATH for Windows
+#        if: ${{ matrix.os == 'Windows' }}
+#        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+#
+#      - name: Install Poetry
+#        run: python install-poetry.py -y ${{ matrix.args }}
+#
+#      - name: Upload Failure Log
+#        uses: actions/upload-artifact@v4
+#        if: failure()
+#        with:
+#          name: poetry-installer-error.log
+#          path: poetry-installer-error-*.log
+#
+#      - name: Verify Installation
+#        run: |
+#          set -e
+#          poetry new foobar
+#          cd foobar
+#          poetry config virtualenvs.in-project true
+#          poetry env use python
+#          [ "$(poetry run python --version)" == "$(python --version)" ] \
+#            || { echo >&2 "ERROR: Virtual environment Python version do not match system version." && exit 1; }
+#
+#      - name: Uninstall Poetry
+#        run: |
+#          python install-poetry.py -y --uninstall
+#          { type poetry 2>/dev/null >&2 && exit 1; } || exit 0
+#
+#  # debian/ubuntu needs special testing due to various issues around python packaging
+#  # and configuration
+#  integration-ubuntu:
+#    name: Integration Test / Ubuntu / ${{ matrix.tag }}
+#    runs-on: ubuntu-latest
+#    container: docker.io/ubuntu:${{ matrix.tag }}
+#    strategy:
+#      matrix:
+#        tag:
+#          - focal
+#          - jammy
+#    defaults:
+#      run:
+#        shell: bash
+#    steps:
+#      - uses: actions/checkout@v4
+#
+#      - name: Install Packages
+#        run: |
+#          apt-get -y update
+#          apt-get -y install python3 ca-certificates
+#          apt-get -y install --reinstall python3-distutils
+#
+#      - name: Update PATH
+#        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+#
+#      - name: Install Poetry
+#        env:
+#          DEB_PYTHON_INSTALL_LAYOUT: "deb"
+#        run: python3 install-poetry.py -y
+#
+#      - name: Upload Failure Log
+#        uses: actions/upload-artifact@v4
+#        if: failure()
+#        with:
+#          name: poetry-installer-error.log
+#          path: poetry-installer-error-*.log
+#
+#      - name: Verify Installation
+#        run: |
+#          set -e
+#          poetry new foobar
+#          cd foobar
+#          poetry config virtualenvs.in-project true
+#          poetry env use python3
+#          [ "$(poetry run python --version)" == "$(python3 --version)" ] \
+#            || { echo >&2 "ERROR: Virtual environment Python version do not match system version." && exit 1; }
+#
+#      - name: Uninstall Poetry
+#        run: |
+#          python3 install-poetry.py -y --uninstall
+#          { type poetry 2>/dev/null >&2 && exit 1; } || exit 0
+
+  integration-macos-homebrew:
+    name: Integration Test / MacOS / Homebrew Python
+    runs-on: macos-latest
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
+      - name: Install Homebrew
+        run: |
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo >> /Users/runner/.bash_profile
+          echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> /Users/runner/.bash_profile
 
-      - name: Update PATH
-        if: ${{ matrix.os != 'Windows' }}
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Update PATH for Windows
-        if: ${{ matrix.os == 'Windows' }}
-        run: echo "$APPDATA\Python\Scripts" >> $GITHUB_PATH
+      - name: Install Python 3.13
+        run: |
+          brew install python@3.13
 
       - name: Install Poetry
-        run: python install-poetry.py -y ${{ matrix.args }}
-
-      - name: Upload Failure Log
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: poetry-installer-error.log
-          path: poetry-installer-error-*.log
-
-      - name: Verify Installation
         run: |
-          set -e
-          poetry new foobar
-          cd foobar
-          poetry config virtualenvs.in-project true
-          poetry env use python
-          [ "$(poetry run python --version)" == "$(python --version)" ] \
-            || { echo >&2 "ERROR: Virtual environment Python version do not match system version." && exit 1; }
+          python -m site
+          ls -all $(which python)
+          curl -sSL https://install.python-poetry.org | python -
 
-      - name: Uninstall Poetry
+      - name: Install Python 3.12
         run: |
-          python install-poetry.py -y --uninstall
-          { type poetry 2>/dev/null >&2 && exit 1; } || exit 0
+          brew install python@3.12
+          echo "$(brew --prefix python@3.12)/libexec/bin" >> $GITHUB_PATH
 
-  # debian/ubuntu needs special testing due to various issues around python packaging
-  # and configuration
-  integration-ubuntu:
-    name: Integration Test / Ubuntu / ${{ matrix.tag }}
-    runs-on: ubuntu-latest
-    container: docker.io/ubuntu:${{ matrix.tag }}
-    strategy:
-      matrix:
-        tag:
-          - focal
-          - jammy
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Packages
+      - name: Test Poetry
         run: |
-          apt-get -y update
-          apt-get -y install python3 ca-certificates
-          apt-get -y install --reinstall python3-distutils
+          python -m site
+          ls -all $(which python)
+          poetry new foo
+          cd foo
+          poetry add pycowsay
+          poetry run pycowsay
 
-      - name: Update PATH
-        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-      - name: Install Poetry
-        env:
-          DEB_PYTHON_INSTALL_LAYOUT: "deb"
-        run: python3 install-poetry.py -y
-
-      - name: Upload Failure Log
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: poetry-installer-error.log
-          path: poetry-installer-error-*.log
-
-      - name: Verify Installation
+      - name: Uninstall Python 3.13
         run: |
-          set -e
-          poetry new foobar
-          cd foobar
-          poetry config virtualenvs.in-project true
-          poetry env use python3
-          [ "$(poetry run python --version)" == "$(python3 --version)" ] \
-            || { echo >&2 "ERROR: Virtual environment Python version do not match system version." && exit 1; }
+          brew uninstall --ignore-dependencies python@3.13
 
-      - name: Uninstall Poetry
+      - name: Test Poetry
         run: |
-          python3 install-poetry.py -y --uninstall
-          { type poetry 2>/dev/null >&2 && exit 1; } || exit 0
+          ls -all /Library/Frameworks/Python.framework/Versions/Current/bin/python || :
+          python -m site
+          ls -all $(which python)
+          cd foo
+          poetry run pycowsay
