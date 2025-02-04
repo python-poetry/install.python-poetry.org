@@ -571,14 +571,14 @@ class Installer:
                     return 0
 
         try:
-            self.install(version)
+            new_windows_bin = self.install(version)
         except subprocess.CalledProcessError as e:
             raise PoetryInstallationError(
                 return_code=e.returncode, log=e.output.decode()
             ) from e
 
         self._write("")
-        self.display_post_message(version)
+        self.display_post_message(version, new_windows_bin)
 
         return 0
 
@@ -598,7 +598,7 @@ class Installer:
             self.version_file.write_text(version)
             self._install_comment(version, "Done")
 
-            return 0
+            return env.bin_path
 
     def uninstall(self) -> int:
         if not self.data_dir.exists():
@@ -705,30 +705,35 @@ class Installer:
         }
         self._write(PRE_MESSAGE.format(**kwargs))
 
-    def display_post_message(self, version: str) -> None:
+    def display_post_message(self, version: str, new_windows_bin: str) -> None:
         if WINDOWS:
-            return self.display_post_message_windows(version)
+            return self.display_post_message_windows(version, new_windows_bin)
 
         if SHELL == "fish":
             return self.display_post_message_fish(version)
 
         return self.display_post_message_unix(version)
 
-    def display_post_message_windows(self, version: str) -> None:
+    def display_post_message_windows(self, version: str, new_windows_bin: str) -> None:
         path = self.get_windows_path_var()
 
         message = POST_MESSAGE_NOT_IN_PATH
         if path and str(self.bin_dir) in path:
             message = POST_MESSAGE
 
+        if new_windows_bin != self.bin_dir:
+            final_path = new_windows_bin
+        else:
+            final_path = self.bin_dir
+
         self._write(
             message.format(
                 poetry=colorize("info", "Poetry"),
                 version=colorize("b", version),
-                poetry_home_bin=colorize("comment", self.bin_dir),
-                poetry_executable=colorize("b", self.bin_dir.joinpath("poetry")),
+                poetry_home_bin=colorize("comment", final_path),
+                poetry_executable=colorize("b", final_path.joinpath("poetry")),
                 configure_message=POST_MESSAGE_CONFIGURE_WINDOWS.format(
-                    poetry_home_bin=colorize("comment", self.bin_dir)
+                    poetry_home_bin=colorize("comment", final_path)
                 ),
                 test_command=colorize("b", "poetry --version"),
             )
