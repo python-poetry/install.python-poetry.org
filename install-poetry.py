@@ -23,8 +23,8 @@ script to alternatives, consider maintaining a local copy as part of your infras
 
 For full documentation, visit https://python-poetry.org/docs/#installation.
 """
-import sys
 
+import sys
 
 # Eager version check so we fail nicely before possible syntax errors
 if sys.version_info < (3, 6):  # noqa: UP036
@@ -49,7 +49,6 @@ from pathlib import Path
 from typing import Optional
 from urllib.request import Request
 from urllib.request import urlopen
-
 
 SHELL = os.getenv("SHELL", "")
 WINDOWS = sys.platform.startswith("win") or (sys.platform == "cli" and os.name == "nt")
@@ -535,7 +534,7 @@ class Installer:
             version = self._path
         else:
             try:
-                version, current_version = self.get_version()
+                version, _current_version = self.get_version()
             except ValueError:
                 return 1
 
