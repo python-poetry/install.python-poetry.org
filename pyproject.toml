@@ -1,10 +1,12 @@
 [tool.ruff]
 fix = true
+line-length = 88
+target-version = "py37"
+
+[tool.ruff.lint]
 unfixable = [
     "ERA", # do not autoremove commented out code
 ]
-target-version = "py37"
-line-length = 88
 extend-select = [
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
@@ -20,10 +22,9 @@ extend-select = [
     "UP",  # pyupgrade
 ]
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 force-single-line = true
 lines-between-types = 1
-lines-after-imports = 2
