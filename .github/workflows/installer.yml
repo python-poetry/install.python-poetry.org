@@ -26,11 +26,11 @@ jobs:
       matrix:
         os: [Ubuntu, macOS, Windows]
         python-version:
-          - "3.9"
           - "3.10"
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.14"
         args:
           - ""
           - "--preview"
@@ -41,7 +41,7 @@ jobs:
           - os: Windows
             image: windows-2022
           - os: macOS
-            image: macos-12
+            image: macos-14
       fail-fast: false
     defaults:
       run:
@@ -96,8 +96,8 @@ jobs:
     strategy:
       matrix:
         tag:
-          - focal
           - jammy
+          - noble
     defaults:
       run:
         shell: bash
@@ -108,7 +108,6 @@ jobs:
         run: |
           apt-get -y update
           apt-get -y install python3 ca-certificates
-          apt-get -y install --reinstall python3-distutils
 
       - name: Update PATH
         run: echo "$HOME/.local/bin" >> $GITHUB_PATH
