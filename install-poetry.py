@@ -327,7 +327,10 @@ class VirtualEnvironment:
             import ensurepip  # noqa: F401
             import venv
 
-            builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=False)
+            # Apple's framework Python executables depend on a library relative to
+            # their installed location. Copying one into a virtual environment
+            # breaks that reference (for example, @executable_path/../Python3).
+            builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=MACOS)
             context = builder.ensure_directories(target)
 
             if (
