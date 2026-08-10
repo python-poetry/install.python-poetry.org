@@ -327,7 +327,9 @@ class VirtualEnvironment:
             import ensurepip  # noqa: F401
             import venv
 
-            if sys.platform == "darwin" and "/Library/Developer/CommandLineTools" in (sys.executable or ""):
+            if sys.platform == "darwin" and "/Library/Developer/CommandLineTools" in (
+                sys.executable or ""
+            ):
                 # The macOS Xcode Command Line Tools Python is a stub (e.g. /usr/bin/python3 ->
                 # /Library/Developer/CommandLineTools/usr/bin/python3) whose venv bin/python
                 # carries an unresolvable `@executable_path/../Python3` loader reference, so
