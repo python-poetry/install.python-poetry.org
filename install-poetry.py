@@ -327,6 +327,16 @@ class VirtualEnvironment:
             import ensurepip  # noqa: F401
             import venv
 
+            if sys.platform == "darwin" and "/Library/Developer/CommandLineTools" in (
+                sys.executable or ""
+            ):
+                # The macOS Xcode Command Line Tools Python is a stub (e.g. /usr/bin/python3 ->
+                # /Library/Developer/CommandLineTools/usr/bin/python3) whose venv bin/python
+                # carries an unresolvable `@executable_path/../Python3` loader reference, so
+                # pip (and therefore the poetry install) fails with a dyld error. Use the
+                # robust virtualenv bootstrap (--always-copy) below to create a self-contained venv.
+                raise ImportError
+
             builder = venv.EnvBuilder(clear=True, with_pip=True, symlinks=False)
             context = builder.ensure_directories(target)
 
@@ -339,7 +349,9 @@ class VirtualEnvironment:
 
             builder.create(target)
         except ImportError:
-            # fallback to using virtualenv package if venv is not available, eg: ubuntu
+            # fallback to using virtualenv package if venv is not available (eg: ubuntu)
+            # or if the base interpreter is the macOS Command Line Tools stub which
+            # produces a broken venv
             python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
             virtualenv_bootstrap_url = (
                 f"https://bootstrap.pypa.io/virtualenv/{python_version}/virtualenv.pyz"
