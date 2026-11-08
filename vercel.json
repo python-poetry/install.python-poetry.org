@@ -1,0 +1,28 @@
+{
+  "headers": [
+    {
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ],
+      "source": "/"
+    },
+    {
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ],
+      "source": "/(.+)\\.py"
+    }
+  ],
+  "rewrites": [
+    {
+      "destination": "/install-poetry.py",
+      "source": "/"
+    }
+  ]
+}
