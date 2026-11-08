@@ -1,0 +1,5 @@
+# Cloudflare Pages configuration.
+# Build command (set in the Cloudflare dashboard): see README.md#hosting
+name = "install-python-poetry-org"
+compatibility_date = "2026-11-01"
+pages_build_output_dir = "dist"
