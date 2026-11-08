@@ -5,8 +5,18 @@
 This repository contains Poetry's official installation script, installer source and
 related hosting configuration.
 
-The script is hosted on [Vercel](https://vercel.com/) and made available at
+The script is hosted on [Cloudflare Pages](https://pages.cloudflare.com/) and made available at
 https://install.python-poetry.org/.
+
+### Hosting
+
+The Cloudflare Pages project is connected to this repository and configured with:
+
+- **Build command:** `mkdir -p dist && cp install-poetry.py _headers _redirects dist/`
+- **Build output directory:** `dist` (set in `wrangler.toml`)
+
+`_redirects` serves `install-poetry.py` at `/`, and `_headers` makes sure it is
+served as `text/plain`.
 
 ## Usage
 
